@@ -1,0 +1,21 @@
+name: "Bump Release CalVer"
+description: "An action to fetch the latest release and set the next CalVer version based on the current version."
+
+inputs:
+  github_token:
+    description: "GitHub token"
+    required: true
+
+outputs:
+  next_version:
+    description: "The next CalVer version calculated based on the latest release"
+    value: ${{ steps.bump-release-calver.outputs.next_version }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: bump-release-calver
+      run: "${GITHUB_ACTION_PATH}/entrypoint.sh"
+      shell: bash
+      env:
+        github_token: ${{ inputs.github_token }} # Use inputs.github_token
