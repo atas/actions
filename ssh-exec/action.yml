@@ -1,0 +1,35 @@
+name: "SSH Deploy Action"
+description: "Reusable action to set up SSH and trigger a remote deployment script."
+inputs:
+  ssh_key:
+    description: "Private SSH key"
+    required: true
+  ssh_port:
+    description: "SSH Port"
+    required: true
+    default: "22"
+  ssh_host:
+    description: "SSH Host"
+    required: true
+  ssh_user:
+    description: "SSH User"
+    required: true
+  deploy_script_path:
+    description: "Path to the deployment script on the remote host"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up SSH
+      shell: bash
+      run: |
+        mkdir -p ~/.ssh/
+        echo "${{ inputs.ssh_key }}" > ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
+        ssh-keyscan -p ${{ inputs.ssh_port }} ${{ inputs.ssh_host }} >> ~/.ssh/known_hosts
+
+    - name: Trigger pull-deploy
+      shell: bash
+      run: |
+        ssh -p${{ inputs.ssh_port }} ${{ inputs.ssh_user }}@${{ inputs.ssh_host }} "${{ inputs.deploy_script_path }}"
