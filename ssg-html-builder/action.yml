@@ -1,0 +1,13 @@
+name: "Ata's SSG HTML Builder"
+description: "GitHub Action that builds HTML from PHP files in a repository based on github.com/atas/ssg"
+runs:
+  using: "composite"
+  steps:
+    - run: echo "$GITHUB_ACTION_PATH" >> $GITHUB_PATH
+      shell: bash
+    - run: LESS_FILE_PATH=${{ inputs.less_file_path }} generate-html.sh
+      shell: bash
+inputs:
+  less_file_path:
+    description: "Path to the .less file to compile it, if you are using less."
+    required: false
