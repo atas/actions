@@ -1,0 +1,58 @@
+name: "Detect Changed Directories"
+description: "Detects which immediate subdirectories under a given path have changed files. Uses the GitHub API — works with shallow checkouts."
+branding:
+  icon: folder
+  color: blue
+
+inputs:
+  path:
+    description: "Parent directory to watch for changes (e.g., 'jobs' or 'services')"
+    required: false
+    default: "."
+
+outputs:
+  dirs:
+    description: "JSON array of changed directory names (e.g., ['api', 'worker'])"
+    value: ${{ steps.detect.outputs.dirs }}
+  any:
+    description: "Whether any directories changed ('true' or 'false')"
+    value: ${{ steps.detect.outputs.any }}
+
+runs:
+  using: composite
+  steps:
+    - id: detect
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        INPUT_PATH: ${{ inputs.path }}
+      run: |
+        # Normalize: strip trailing slash
+        path="${INPUT_PATH%/}"
+
+        # Get changed files based on event type
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          files=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.number }}/files" --paginate --jq '.[].filename')
+        elif [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+          files=$(gh api "repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}" --jq '.files[].filename')
+        else
+          # workflow_dispatch or new branch — return all subdirectories
+          dirs=$(ls -d "${path}"/*/ 2>/dev/null | xargs -n1 basename | jq -R . | jq -sc .)
+          echo "dirs=${dirs}" >> "$GITHUB_OUTPUT"
+          if [ "$dirs" = "[]" ]; then
+            echo "any=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "any=true" >> "$GITHUB_OUTPUT"
+          fi
+          exit 0
+        fi
+
+        # Filter to path, extract immediate subdirectory names, deduplicate
+        dirs=$(echo "$files" | grep "^${path}/" | cut -d/ -f$(( $(echo "$path" | tr -cd '/' | wc -c) + 2 )) | sort -u | jq -R . | jq -sc .)
+
+        echo "dirs=${dirs}" >> "$GITHUB_OUTPUT"
+        if [ "$dirs" = "[]" ]; then
+          echo "any=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "any=true" >> "$GITHUB_OUTPUT"
+        fi
