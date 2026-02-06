@@ -38,6 +38,7 @@ runs:
         else
           # workflow_dispatch or new branch — return all subdirectories
           dirs=$(ls -d "${path}"/*/ 2>/dev/null | xargs -n1 basename | jq -R . | jq -sc .)
+          echo "Changed dirs: ${dirs}"
           echo "dirs=${dirs}" >> "$GITHUB_OUTPUT"
           if [ "$dirs" = "[]" ]; then
             echo "any=false" >> "$GITHUB_OUTPUT"
@@ -52,6 +53,7 @@ runs:
         candidates=$(echo "$files" | grep "^${path}/" | cut -d/ -f$(( $(echo "$path" | tr -cd '/' | wc -c) + 2 )) | sort -u)
         dirs=$(echo "$candidates" | while read -r d; do [ -d "${path}/${d}" ] && echo "$d"; done | jq -R . | jq -sc .)
 
+        echo "Changed dirs: ${dirs}"
         echo "dirs=${dirs}" >> "$GITHUB_OUTPUT"
         if [ "$dirs" = "[]" ]; then
           echo "any=false" >> "$GITHUB_OUTPUT"
