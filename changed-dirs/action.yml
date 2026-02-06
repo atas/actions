@@ -48,7 +48,9 @@ runs:
         fi
 
         # Filter to path, extract immediate subdirectory names, deduplicate
-        dirs=$(echo "$files" | grep "^${path}/" | cut -d/ -f$(( $(echo "$path" | tr -cd '/' | wc -c) + 2 )) | sort -u | jq -R . | jq -sc .)
+        # Then filter out directories that no longer exist (e.g., deleted/renamed)
+        candidates=$(echo "$files" | grep "^${path}/" | cut -d/ -f$(( $(echo "$path" | tr -cd '/' | wc -c) + 2 )) | sort -u)
+        dirs=$(echo "$candidates" | while read -r d; do [ -d "${path}/${d}" ] && echo "$d"; done | jq -R . | jq -sc .)
 
         echo "dirs=${dirs}" >> "$GITHUB_OUTPUT"
         if [ "$dirs" = "[]" ]; then
