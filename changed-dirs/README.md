@@ -29,6 +29,9 @@ Detects which immediate subdirectories under a given path have changed files. Us
 jobs:
   changed_dirs:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
       dirs: ${{ steps.changed_dirs.outputs.dirs }}
     steps:
@@ -49,6 +52,10 @@ jobs:
       - uses: actions/checkout@v4
       - run: echo "Changed dir: jobs/${{ matrix.dir }}"
 ```
+
+## Permissions
+
+Requires `contents: read` and `pull-requests: read` on the calling job (for GitHub API access).
 
 ## Notes
 
