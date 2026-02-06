@@ -50,8 +50,8 @@ runs:
 
         # Filter to path, extract immediate subdirectory names, deduplicate
         # Then filter out directories that no longer exist (e.g., deleted/renamed)
-        candidates=$(echo "$files" | grep "^${path}/" | cut -d/ -f$(( $(echo "$path" | tr -cd '/' | wc -c) + 2 )) | sort -u)
-        dirs=$(echo "$candidates" | while read -r d; do [ -d "${path}/${d}" ] && echo "$d"; done | jq -R . | jq -sc .)
+        candidates=$(echo "$files" | grep "^${path}/" | cut -d/ -f$(( $(echo "$path" | tr -cd '/' | wc -c) + 2 )) | sort -u || true)
+        dirs=$(echo "$candidates" | while read -r d; do if [ -n "$d" ] && [ -d "${path}/${d}" ]; then echo "$d"; fi; done | jq -R . | jq -sc .)
 
         echo "Changed dirs: ${dirs}"
         echo "dirs=${dirs}" >> "$GITHUB_OUTPUT"
