@@ -6,9 +6,13 @@ branding:
 
 inputs:
   path:
-    description: "Parent directory to watch for changes (e.g., 'jobs' or 'services')"
+    description: "Parent directory to trigger_all for changes (e.g., 'jobs' or 'services')"
     required: false
     default: "."
+  trigger_all:
+    description: "Extra paths to trigger_all — if any files change here, ALL subdirs under 'path' are returned (e.g., 'shared-py' or 'shared-py,lib')"
+    required: false
+    default: ""
 
 outputs:
   dirs:
@@ -26,6 +30,7 @@ runs:
       env:
         GH_TOKEN: ${{ github.token }}
         INPUT_PATH: ${{ inputs.path }}
+        INPUT_TRIGGER_ALL: ${{ inputs.trigger_all }}
       run: |
         # Normalize: strip trailing slash
         path="${INPUT_PATH%/}"
@@ -46,6 +51,21 @@ runs:
             echo "any=true" >> "$GITHUB_OUTPUT"
           fi
           exit 0
+        fi
+
+        # If any trigger_alled paths have changes, return ALL subdirs
+        if [ -n "$INPUT_TRIGGER_ALL" ]; then
+          IFS=',' read -ra trigger_all_paths <<< "$INPUT_TRIGGER_ALL"
+          for wp in "${trigger_all_paths[@]}"; do
+            wp=$(echo "$wp" | xargs)  # trim whitespace
+            if echo "$files" | grep -q "^${wp}/"; then
+              dirs=$(ls -d "${path}"/*/ 2>/dev/null | xargs -n1 basename | jq -R . | jq -sc .)
+              echo "Watch path '${wp}' changed — returning all dirs: ${dirs}"
+              echo "dirs=${dirs}" >> "$GITHUB_OUTPUT"
+              if [ "$dirs" = "[]" ]; then echo "any=false"; else echo "any=true"; fi >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
         fi
 
         # Filter to path, extract immediate subdirectory names, deduplicate

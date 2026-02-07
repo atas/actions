@@ -4,9 +4,10 @@ Detects which immediate subdirectories under a given path have changed files. Us
 
 ## Inputs
 
-| Input  | Description                                          | Required | Default |
-| ------ | ---------------------------------------------------- | -------- | ------- |
-| `path` | Parent directory to watch for changes (e.g., `jobs`) | `false`  | `.`     |
+| Input         | Description                                                                                          | Required | Default |
+| ------------- | ---------------------------------------------------------------------------------------------------- | -------- | ------- |
+| `path`        | Parent directory to watch for changes (e.g., `jobs`)                                                 | `false`  | `.`     |
+| `trigger_all` | Comma-separated paths — if any files change here, ALL subdirs under `path` are returned (e.g., `shared-py,lib`) | `false`  | `""`    |
 
 ## Outputs
 
@@ -40,6 +41,7 @@ jobs:
         id: changed_dirs
         with:
           path: jobs
+          trigger_all: shared-py  # changes in shared-py rebuild all jobs
 
   build:
     needs: changed_dirs
